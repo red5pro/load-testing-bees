@@ -14,8 +14,8 @@ For start RTMP,RTSP,RTC SUBSCRIBE BEES you need publish stream to Red5pro server
 ## USAGE
 
 1. `sudo apt install -y git`
-2. `git clone https://github.com/red5pro/LALALAL`
-3. `cd LALALAL`
+2. `git clone https://github.com/red5pro/automated-bees`
+3. `cd ./automated-bees`
 4. `sudo chmod +x *.sh`
 5.  Prepare instances on the AWS for Bees and check ssh access.
 6.  Open and modify file `load_test.sh`
@@ -30,7 +30,7 @@ PUBLIC_IPBEES="7.7.7.7, 8.8.8.8, 9.9.9.9"           # IP Address List of BEES se
 
 7. Start `/bin/bash ./red5proInstaller.sh`
 
-Now you are running the LALALAL and see `MAIN MENU FOR LOAD TESTING RED5PRO SERVER`
+Now you are running the `automated-bees` and see `MAIN MENU FOR LOAD TESTING RED5PRO SERVER`
 
 ### 1. Install Bees software to Bees servers:
 
