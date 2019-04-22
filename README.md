@@ -31,6 +31,7 @@ PUBLIC_IPBEES="7.7.7.7, 8.8.8.8, 9.9.9.9"           # IP Address List of BEES se
 7. Start `/bin/bash ./red5proInstaller.sh`
 
 Now you are running the `automated-bees` and see `MAIN MENU FOR LOAD TESTING RED5PRO SERVER`
+![Main menu](https://github.com/red5pro/automated-bees/blob/master/screen_main_menu.png)
 
 ### 1. Install Bees software to Bees servers:
 
@@ -46,6 +47,7 @@ Now you are running the `automated-bees` and see `MAIN MENU FOR LOAD TESTING RED
 * Press `1-99` then Enter to start load testing on one Bees server
 * Press `A` then Enter to start load testing on the all bees servers.
 
+![Testing menu](https://github.com/red5pro/automated-bees/blob/master/screen_testing_menu.png)
 
 ### 3. For monitoring Red5 Pro server you can use script `server_script.sh`
 
@@ -64,6 +66,3 @@ Now you are running the `automated-bees` and see `MAIN MENU FOR LOAD TESTING RED
 |17:48:55| |CPU= 1%| |MEM= 51%| |CONNECTIONS= 2|
 |17:49:01| |CPU= 1%| |MEM= 51%| |CONNECTIONS= 2|
 ```
-
-
-
