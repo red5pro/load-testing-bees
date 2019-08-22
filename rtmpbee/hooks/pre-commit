@@ -1,0 +1,12 @@
+#!/bin/bash
+
+echo "Running pre-commit..."
+
+version=$(git blame -L 22,+1 -- src/main/java/com/infrared5/rtmpbee/Red5Bee.java)
+echo $version
+
+if ! echo $version | grep -e "^0000"; then
+  echo "New commits require updated versions."
+  echo "Please update the VERSION in src/main/java/com/infrared5/rtmpbee/Red5Bee.java."
+  exit 1
+fi
