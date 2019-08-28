@@ -1,35 +1,28 @@
-# BEES FOR LOAD TESTING RED5PRO AND STREAM MANAGER
+# LOAD TESTING RED5PRO SERVER AND STREAM MANAGER
 
-## INTRODUCTION
+### INTRODUCTION
 
+In this repo present different Bees With Machine Guns for load testing Red5 Pro server and Stream Manager.   
+Each Bee program runs an "attack" on a server. It does this by creating clients that subscribe to a video stream coming from that server. One Bee can have a number (N) of Bullets (or stingers, if you will) that are fired concurrently.
+By creating these virtual clients, the Bees stress the targeted application server in order to get a better idea of how many concurrent connections the system architecture can support at the same time.
 
+### REQUIREMENTS
 
-## REQUIREMENTS
+Load tests with Bees use a lot of resources, better to use AWS large instances, such as: `c5.9xlarge` or `c5.18xlarge`.   
+For start RTMP, RTSP, RTC Subscribe Bees need to publish the stream to Red5pro server with name `stream1`.
 
+#### SUBSCRIBE BEES
 
+* **[RTMP bees](rtmpbee)**  
+* **[RTSP bees](rtspbee)**  
+* **[WebRTC bees](rtcbee)**
 
+#### PUBLISH BEES
 
-### SUBSCRIBE BEES
+* **[RTMP bees](rtmpbee-publisher)**  
+* **[WebRTC bees](rtcbee-publisher)** 
 
-| **[RTMP subscribe bees](rtmpbee)**
-| :-----
-| *The RTMP Bee is a java program that runs a subscription "attack" on a server. One RTMP Bee can have N Bullets (or stingers) that are fired concurrently.*
+#### AUTOMATED SCRIPT FOR LOAD TESTING
 
-| **[RTSP subscribe bees](rtspbee)**
-| :-----
-| *The RTSP Bee is a java program that runs a subscription "attack" on a server. One RTSP Bee can have N Bullets (or stingers) that are fired concurrently.*
+* **[Automated bees](automated-bees)** 
 
-| **[WebRTC subscribe bees](rtcbee)**
-| :-----
-| *The RTC Bee is a command-line program that runs a subscription "attack" on a server. One RTC Bee can have N Bullets (or stingers) that are fired concurrently. Using Chromium browser for generating WebRTC connections.*
-
-
-### PUBLISH BEES
-
-| **[RTMP publish bees](rtmpbee-publisher)**
-| :-----
-| *The RTMP publish Bees is a command-line program that runs a subscription "attack" on a server. One RTMP Bee can have N Bullets (or stingers) that are fired concurrently. Using FFmpeg for generate RTMP connections*
-
-| **[WebRTC publish bees](rtcbee-publisher)**
-| :-----
-| *The RTC Bee is a command-line program that runs a subscription "attack" on a server. One RTC Bee can have N Bullets (or stingers) that are fired concurrently. Using Chromium browser for generating WebRTC connections.*
