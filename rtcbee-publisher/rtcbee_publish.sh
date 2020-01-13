@@ -99,7 +99,7 @@ echo "Starting attack at $dt"
 for ((i=1;i<=amount;i++)); do
     debug_port=$((DEBUG_PORT_START + i))
     touch "log/rtcbee_${debug_port}.log"
-    chromium-browser --single-process --use-fake-ui-for-media-stream --allow-file-access --use-fake-device-for-media-stream --use-file-for-fake-audio-capture=$audiofile --use-file-for-fake-video-capture=$videofile --autoplay-policy=no-user-gesture-required --user-data-dir=/tmp/chrome"$(date +%s%N)" --headless --disable-gpu --mute-audio --window-size=1024,768 --remote-debugging-port=$debug_port "${endpoint}-${debug_port}&${quality}" 3>&1 1>"log/rtcbee_${debug_port}.log" 2>&1 &
+    chromium-browser --use-fake-ui-for-media-stream --allow-file-access --use-fake-device-for-media-stream --use-file-for-fake-audio-capture=$audiofile --use-file-for-fake-video-capture=$videofile --user-data-dir=/tmp/chrome"$(date +%s%N)" --headless --disable-gpu --mute-audio --window-size=1024,768 --remote-debugging-port=$debug_port "${endpoint}-${debug_port}&${quality}" 3>&1 1>"log/rtcbee_${debug_port}.log" 2>&1 &
     pid=$!
     pids[$i-1]=$pid
     echo "Dispatching Bee $i, PID(${pid})..."
