@@ -35,15 +35,9 @@ sysctl fs.inotify.max_user_watches=13166604
 
 
 process=$(pgrep chromium-browse);
+DEBUG_PORT_START=$((( RANDOM % 10000)+10000));
 
-if [ "$process" != "" ]; then
-    echo " ---------- Check free ports for start..."
-    check_port=$(ls -t ./log/ | head -1 |sed 's/[^0-9]*//g')
-    if [ $check_port -gt $DEBUG_PORT_START ];
-    then
-        DEBUG_PORT_START=$check_port;
-    fi
-else
+if [ "$process" == "" ]; then
     mkdir -p log
     rm -rf ./log/*
     echo " ---------- DELETE OLD LOG FILES"
