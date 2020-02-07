@@ -8,7 +8,7 @@ By creating these virtual clients, the Bees stress the targeted application serv
 
 ### REQUIREMENTS
 
-Load tests with Bees use a lot of resources, better to use AWS large instances, such as: `c5.9xlarge` or `c5.18xlarge`.   
+Load tests with Bees use a lot of resources, better to use AWS large instances, such as: `c5.9xlarge` or `c5.18xlarge`. Even on these large instances, you can only expect to get about 200 bee connections (less for higher bitrate streams).  
 For start RTMP, RTSP, RTC Subscribe Bees need to publish the stream to Red5pro server with name `stream1`.
 
 #### SUBSCRIBE BEES
