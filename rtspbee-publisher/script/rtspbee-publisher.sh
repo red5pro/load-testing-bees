@@ -9,7 +9,7 @@
 # LOCAL EXAMPLE: ./rtspbee-publisher.sh localhost:1935 live stream1 30 10 bbb_480p.mp4
 #
 
-#./rtspbee-publisher.sh ci-do-clustered2.red5.org:8554 live stream201 1 60 test_480p_750kbps_24fps.mp4
+#./rtspbee-publisher.sh red5pro.server.com:8554 live stream201 1 60 test_480p_750kbps_24fps.mp4
 # DESCRIPTION: Creates N-number of RTSP broadcast with file as a live stream.
 #
 # OPTIONS: see function ’usage’ below
