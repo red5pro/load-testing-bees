@@ -27,7 +27,7 @@ ffmpeg -i "big_buck_bunny_480p_surround-fix.avi" \
 ./480p_750kbps_24fps.mp4
 ```
 
-## 720p 1, 5Mbit/s 30FPS
+## 720p 1,5Mbit/s 30FPS
 
 ``` sh
 ffmpeg -i "big_buck_bunny_480p_surround-fix.avi" \
@@ -37,7 +37,7 @@ ffmpeg -i "big_buck_bunny_480p_surround-fix.avi" \
 ./720p_1500kbps_30fps.mp4
 ```
 
-## 1080 4, 5Mbit/s 30FPS
+## 1080 4,5Mbit/s 30FPS
 
 ``` sh
 ffmpeg -i "big_buck_bunny_480p_surround-fix.avi" \
