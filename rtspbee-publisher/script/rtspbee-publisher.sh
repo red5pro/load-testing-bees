@@ -3,93 +3,161 @@
 #
 # FILE: rtspbee-publisher.sh
 #
-# USAGE: rtspbee-publisher.sh [endpoint] [app] [streamName] [amount of streams to start] [amount of time to playback] [mp4-file]
+# USAGE: rtspbee-publisher.sh [endpoint] [app] [streamName] [amount of streams to start] [amount of time to playback] [Red5pro server API key] [mp4-file]
 #
-# EXAMPLE: ./rtspbee-publisher.sh red5pro.server.com live stream1 10 30 bbb_480p.mp4
-# LOCAL EXAMPLE: ./rtspbee-publisher.sh localhost:1935 live stream1 30 10 bbb_480p.mp4
+# EXAMPLE: ./rtspbee-publisher.sh red5pro.server.com live todd 10 10 abc123 /path_to_video_file/bbb_480p.mp4
+# LOCAL EXAMPLE: ./rtspbee-publisher.sh localhost live todd 10 10 abc123 /path_to_video_file/bbb_480p.mp4
 #
-
-#./rtspbee-publisher.sh red5pro.server.com:8554 live stream201 1 60 test_480p_750kbps_24fps.mp4
-# DESCRIPTION: Creates N-number of RTSP broadcast with file as a live stream.
+# DESCRIPTION: Creates N-number of headless RTSP-based subscriptions to a live stream.
+# Console output sent to log/rtspbee_N.log and monitored for status.
 #
 # OPTIONS: see function ’usage’ below
 # REQUIREMENTS: ---
 # BUGS: ---
 # NOTES: ---
-# AUTHOR: Todd Anderson
+# AUTHOR: Todd Anderson, Oles Prykhodko
 # COMPANY: Infrared5, Inc.
-# VERSION: 1.0.0
+# VERSION: 2.0.0
 #===================================================================================
 endpoint=$1
 app=$2
 stream_name=$3
 amount=$4
 timeout=$5
-file=$6
+api_key=$6
+file=$7
+
+mkdir -p log
+PIDS=()
+log_i() {
+    log
+    printf "\033[0;36m [INFO]  --- %s \033[0m\n" "${@}"
+}
+log_s() {
+    log
+    printf "\033[0;32m [START] --- %s \033[0m\n" "${@}"
+}
+log_f() {
+    log
+    printf "\033[0;33m [STOP]  --- %s \033[0m\n" "${@}"
+}
+log_w() {
+    log
+    printf "\033[0;31m [WARN]  --- %s \033[0m\n" "${@}"
+}
+log() {
+    echo -n "[$(date '+%Y-%m-%d %H:%M:%S')]"
+}
 
 #=== FUNCTION ================================================================
 # NAME: shutdown
-# DESCRIPTION: Shutsdown current process
-# PARAMETER 1: The PID.
-#===============================================================================
+# DESCRIPTION: Shutdown current process
+#=============================================================================
+
 function shutdown {
-  pid=$1
-  file=$2
-  kill -9 "$pid" && rm -f "$file" && echo "PID(${pid}) stopped." || echo "Failure to kill ${pid}."
-  echo "Attack ended at $(date '+%d/%m/%Y %H:%M:%S')"
-  return 0
+    local pid=$1
+    local file=$2
+    local name=$3
+    curl --silent "http://${endpoint}:5080/api/v1/applications/${app}/streams/${name}/action/unpublish?accessToken=${api_key}" >/dev/null 2>/dev/null && sleep 0.1
+
+    for ((p=1;p<=5;p++)); do
+        if ps -p "$pid" > /dev/null
+        then
+            kill -9 "$pid" > /dev/null 2>&1
+        else
+            log_f "Bee #$i --- stopped, PID(${pid})"
+            break
+        fi
+        if [ "$p" -eq "5" ]; then
+            log_w "Bee #$i --- Can't stop, PID(${pid}). Please kill this process manualy in terminal: kill ${pid}"
+        fi
+        sleep 0.4
+    done
+    rm -f "$file"
 }
 
 #=== FUNCTION ================================================================
-# NAME: set_timeout
-# DESCRIPTION: Set a non-blocking sleep for a PID
-# PARAMETER 1: The PID.
-# PARAMETER 2: The amount of time to wait before killing process.
-#===============================================================================
-function set_timeout {
-  id=$1
-  t=$2
-  f=$3
-  isLast=$4
-  echo "Will kill ${id} in ${t} seconds..."
-  if [ $isLast -eq 1 ]; then
-    (sleep "$t"; shutdown "$id" "$f" || echo "Failure to kill ${id}."; return 0)
-  else
-    (sleep "$t"; kill -9 "$id" && rm -f "$f" && echo "PID(${id}) stopped." || echo "Failure to kill ${id}.")&
-  fi
-  return 0
+# NAME: interrupt
+# DESCRIPTION: Shutdown all process if script run interrupted: CTRL+C
+#=============================================================================
+
+function interrupt {
+    log_w "Interrupting all process!!!"
+    for index in ${!PIDS[*]}
+    do
+        local i=$((index+1))
+        shutdown "${PIDS[${index}]}" "${file}_${i}" "${stream_name}_${i}"
+    done
+    exit 0
 }
 
-dt=$(date '+%d/%m/%Y %H:%M:%S');
-echo "Attack deployed at $dt"
+#=== FUNCTION =======================================================================
+# NAME: checkStatus
+# DESCRIPTION: Check the success or failure status of the bee subscription on stream.
+#====================================================================================
+
+function checkStatus {
+    local pid=$1
+    local timeout=$2
+    local stream_file=$3
+    local name=$4
+    local beeN=$5
+    
+    fail_counter=5
+    success=0
+    regex_fail="Output #0, rtsp, to"
+    
+    for ((t=1;t<=fail_counter;t++)); do
+        
+        while read -r line
+        do
+            if [[ $line =~ $regex_fail ]]; then
+                success=1
+            fi
+        done < "log/rtspbee_${beeN}.log"
+        
+        if [ $success -eq 1 ]; then
+            log_s "Bee #$beeN --- Deployed. Will kill in ${timeout} seconds, PID:${pid}"
+            sleep "$timeout"
+            shutdown "$pid" "$stream_file" "$name"
+            break
+        else
+            if [ $t -eq $fail_counter ]; then
+                log_w "Bee #$beeN --- Not deployed. Please check log file log/rtspbee_${beeN}.log and target Red5 pro server!!!"
+                sleep $((timeout-fail_counter))
+                shutdown "$pid" "$stream_file" "$name"
+            fi
+            sleep 1
+        fi
+    done
+}
+
+printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
+log_i "Red5 Pro target server: $endpoint"
+log_i "Stream name: $stream_name"
+log_i "Amount of bees $amount"
+log_i "Time to live bees: $timeout"
+log_i "Video file: $file"
+printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
+
+trap 'interrupt' SIGINT
 
 # Dispatch.
-for ((i=0;i<amount;i++)); do
-  name="${stream_name}_${i}"
-  target="rtsp://${endpoint}:/${app}/${name}"
-  stream_file="${file}_${i}"
-  cp "$file" "$stream_file"
-  ffmpeg -re -stream_loop -1 -fflags +igndts -i "$stream_file" -pix_fmt yuv420p -vsync 1 -threads 0 -vcodec copy -acodec aac -muxdelay 0.0 -rtsp_transport tcp -f rtsp "$target" 2>/dev/null &
-  sleep 1
-  isLast=0
-  if [ $i -eq $((amount - 1)) ]; then
-    isLast=1
-  fi
-  pid=$!
-  echo "Dispatching Bee $i($stream_file) at $target, PID(${pid})..."
-  set_timeout "$pid" "$timeout" "$stream_file" $isLast
-  sleep 0.2
+for ((i=1;i<=amount;i++)); do
+    rm -rf ./log/rtspbee_${i}.log
+    name="${stream_name}_${i}"
+    target="rtsp://${endpoint}:8554/${app}/${name}"
+    stream_file="${file}_${i}"
+    cp "$file" "$stream_file"
+    log_s "Bee #$i --- Deploying... Target: ${target}"
+    ffmpeg -re -stream_loop -1 -fflags +igndts -i "${stream_file}" -pix_fmt yuv420p -vsync 1 -threads 0 -vcodec copy -acodec aac -muxdelay 0.0 -rtsp_transport tcp -t "${timeout}" -f rtsp "$target" 3>&1 1>"log/rtspbee_${i}.log" 2>&1 &
+    pid=$!
+    PIDS+=("${pid}")
+    sleep 1
+    if [ "$i" -eq "$amount" ]; then
+        (checkStatus "$pid" "$timeout" "$stream_file" "$name" "$i")
+    else
+        (checkStatus "$pid" "$timeout" "$stream_file" "$name" "$i")&
+    fi
+    sleep 0.2
 done
-
-
-
-
-
-
-
-
-
-
-
-
-
