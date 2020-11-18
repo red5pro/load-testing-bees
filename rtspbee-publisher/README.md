@@ -75,7 +75,7 @@ rtsp://red5pro.server.com:8554/live/stream1
 **USAGE**: rtspbee-publisher_sm.sh [sm_endpoint] [app] [streamName] [amount of streams to start] [amount of time to playback] [Origin API key] [path to mp4-file]   
 **EXAMPLE**:   
 ``` sh
-./rtspbee-publisher_sm.sh "https://stream-manager.url/streammanager/api/4.0/event/live/streamname?action=subscribe" live stream1 10 10 abc123 /path_to_video_file/bbb_480p.mp4
+./rtspbee-publisher_sm.sh "https://stream-manager.url/streammanager/api/4.0/event/live/streamname?action=broadcast" live stream1 10 10 abc123 /path_to_video_file/bbb_480p.mp4
 ```
 
 > [Red5 Pro server API key] or [Origin API key]   
