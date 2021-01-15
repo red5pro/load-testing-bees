@@ -60,15 +60,31 @@ ffmpeg -re -stream_loop -1 -fflags +igndts -i "./720p_1500kbps_30fps.mp4" \
 rtsp://red5pro.server.com:8554/live/stream1
 ```
 
-## Using rtspbee-publisher.sh
+## RTSP publish bees for single Red5 Pro server
 
+**FILE**: rtspbee-publisher.sh   
+**USAGE**: rtspbee-publisher.sh [endpoint] [app] [streamName] [amount of streams to start] [amount of time to playback] [Red5 Pro server API key] [path to mp4-file]   
+**EXAMPLE**:   
 ``` sh
-./rtspbee-publisher.sh red5pro.server.com:8554 live stream1 10 30 ./720p_1500kbps_30fps.mp4
+./rtspbee-publisher.sh "red5pro.server.com" live stream1 10 10 abc123 /path_to_video_file/bbb_480p.mp4
 ```
+
+## RTSP publish bees for Stream Manager
+
+**FILE**: rtspbee-publisher_sm.sh   
+**USAGE**: rtspbee-publisher_sm.sh [sm_endpoint] [app] [streamName] [amount of streams to start] [amount of time to playback] [Origin API key] [path to mp4-file]   
+**EXAMPLE**:   
+``` sh
+./rtspbee-publisher_sm.sh "https://stream-manager.url/streammanager/api/4.0/event/live/streamname?action=broadcast" live stream1 10 10 abc123 /path_to_video_file/bbb_480p.mp4
+```
+
+> [Red5 Pro server API key] or [Origin API key]   
+> If you don't know or didn't set the API key on your server please follow the instruction:   
+> https://www.red5pro.com/docs/server/api/overview/
+
 
 # Attacking
 
 The following will deploy 10 RTSP publishers ( `0.2` seconds apart) which will broadcast for 30 seconds each. Their stream names will be appended by `_N` , where `N` rerpesents the number in the sequence that they were deployed - e.g., `stream1_0` , `stream1_1` , etc.
 
 The script will also create `N` -number of copies of the MP4 file so that each process is working with their own file for broadcast.
-
