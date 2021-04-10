@@ -194,6 +194,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
         console.log('[rtmp] : ' + JSON.stringify(rtmpConfig, null, 2));
 
         function startPublishing (serverAddress) {
+          rtcConfig.app = 'streammanager'
           rtcConfig.connectionParams = {
             host: serverAddress,
             app: app
@@ -219,9 +220,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
          var baseUrl = `${protocol}://${host}:${port}`
          var url = `${baseUrl}/streammanager/api/${apiVersion}/event/${app}/${streamName}?action=broadcast`
 
-         fetch(url)
+        fetch(url)
             .then(response => {
-              var json = response.json()
+              return response.json()
+            })
+            .then(json => {
               if (json.errorMessage) {
                 throw new Error(json.errorMessage)
               }
