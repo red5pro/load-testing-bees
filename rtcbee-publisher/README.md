@@ -54,8 +54,7 @@ $ rtcbee_publish.sh [basic-publisher.html endpoint] [amount of streams to start]
 
 #### endpoint
 
-The endpoint of the `basic-publisher.html` page to publish to a stream. 
-If you have Red5 Pro server version `5.5.0` and lower, you need to copy this file `basic-publisher.html` into the folder `red5pro/webapps/live/` on the server.
+The endpoint of the `basic-publisher.html` page to publish to a stream. You will need to copy this file `basic-publisher.html` into the folder `red5pro/webapps/live/` on the server.
 
 #### amount
 
