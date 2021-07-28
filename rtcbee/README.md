@@ -131,6 +131,6 @@ The amount of time to subscribe to stream. _The actual subscription time may dif
 #### Example
 
 ```sh
-$ ./rtcbee_sm.sh "https://stream-manager.url/streammanager/api/2.0/event/live/streamname?action=subscribe" live todd 10 10
+$ ./rtcbee_sm.sh "https://stream-manager.url/streammanager/api/4.0/event/live/streamname?action=subscribe" live todd 10 10
 ```
 
