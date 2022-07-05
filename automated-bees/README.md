@@ -28,7 +28,7 @@ DOMAIN="domain_red5pro_server.org"                  # The domain name of Red5pro
 PUBLIC_IPBEES="7.7.7.7, 8.8.8.8, 9.9.9.9"           # IP Address List of BEES servers. EXAMPLE: "7.7.7.7, 8.8.8.8, 9.9.9.9"
 ```
 
-7. Start `/bin/bash ./red5proInstaller.sh`
+7. Start `/bin/bash ./load_test.sh`
 
 Now you are running the `automated-bees` and see `MAIN MENU FOR LOAD TESTING RED5PRO SERVER`
 ![Main menu](https://github.com/red5pro/load-testing-bees/blob/master/automated-bees/screen_main_menu.png)
