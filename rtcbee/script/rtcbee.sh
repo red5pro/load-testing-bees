@@ -3,9 +3,9 @@
 #
 # FILE: rtcbee.sh
 #
-# USAGE: rtcbee.sh [endpoint] [amount of streams to start] [amount of time to playback] [enable old scenario 1 after 1 (true/false)]
+# USAGE: rtcbee.sh [endpoint] [amount of streams to start] [amount of time to playback] ]
 #
-# EXAMPLE: ./rtcbee.sh "https://<RED5PRO-SERVER-HOST>/live/viewer.jsp?host=<RED5PRO-SERVER-HOST>&stream=stream1" 5 30 false
+# EXAMPLE: ./rtcbee.sh "https://<RED5PRO-SERVER-HOST>/live/viewer.jsp?host=<RED5PRO-SERVER-HOST>&stream=stream1" 5 30
 #
 # DESCRIPTION: Creates N-number of headless WebRTC-based subscriptions to a live stream.
 # Console output sent to log/rtc_sub_streamname_N.log and monitored for status.
@@ -23,9 +23,14 @@
 endpoint=$1
 amount=$2
 timeout=$3
-mode=$4 # true (enable old scenario 1 after 1)
+mode="true" # true (enable old scenario 1 after 1)
 
-if [ "$mode" != true ] ; then
+# The latest versions of chromium-browser can't support multiple tabs in headless mode.  
+# ERROR: Multiple targets are not supported
+# https://chromium.googlesource.com/chromium/src/+/master/headless/app/headless_shell.cc
+# Variable 'mode' should be set to 'true'
+
+if [ "$mode" != "true" ] ; then
     mode="false"
 fi
 
