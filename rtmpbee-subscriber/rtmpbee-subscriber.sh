@@ -3,7 +3,7 @@
 #
 # FILE: rtmpbee-subscriber.sh
 #
-# USAGE: rtmpbee-subscriber.sh [endpoint] [amount_of_subscribers] [amount_of_time_to_playback_stream]
+# USAGE: rtmpbee-subscriber.sh [endpoint] [amount_of_subscribers] [amount_of_time_to_playback_in_seconds]
 #
 # EXAMPLE: ./rtmpbee-subscriber.sh "rtmp://release-11.red5.net:1935/live/stream1" 1 60    # This will add 1 Subscriber to the stream for 60 seconds
 # 

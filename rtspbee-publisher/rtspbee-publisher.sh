@@ -73,6 +73,7 @@ log() {
 
 if [[ -z "$endpoint" || -z "$port" || -z "$app" || -z "$stream_name" || -z "$amount" || -z "$timeout" || -z "$api_key" || -z "$file" ]]; then
     log_w "Not all arguments are set. Please check your command."
+    log_w "USAGE: ./rtspbee-publisher.sh [endpoint] [rtsp_port] [app] [streamName] [amoun_of_streams_to_start] [amount_of_time_to_playback_in_seconds] [mp4-file]"
     log_w "Example: ./rtspbee-publisher.sh your.red5pro-deploy.com 8554 live stream1 10 10 abc123 /path_to_the_video_file/test.mp4"
     exit 1
 fi
@@ -89,9 +90,6 @@ fi
 
 function shutdown {
     local pid=$1
-    local file=$2
-    local name=$3
-    curl --silent "http://${endpoint}:5080/api/v1/applications/${app}/streams/${name}/action/unpublish?accessToken=${api_key}" >/dev/null 2>/dev/null && sleep 0.1
 
     for ((p=1;p<=5;p++)); do
         if ps -p "$pid" > /dev/null
@@ -118,7 +116,7 @@ function interrupt {
     for index in ${!PIDS[*]}
     do
         local i=$((index+1))
-        shutdown "${PIDS[${index}]}" "${file}_${stream_name}_${i}" "${stream_name}_${i}"
+        shutdown "${PIDS[${index}]}"
     done
     exit 0
 }
@@ -168,16 +166,15 @@ printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
 log_i "RTSP Publish bees"
 log_i "Red5 Pro target server: $endpoint"
 log_i "Red5 Pro target port: $port"
-log_i "Stream name: $stream_name"
-log_i "Amount of bees $amount"
-log_i "Time to live bees: $timeout"
+log_i "Stream prefix name: $stream_name"
+log_i "Amount of publisher $amount"
+log_i "Time to live pubisher: $timeout"
 log_i "Source file: $file"
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
 echo "--------------------------------------------------" >> ${log_file}_main.log
 
 trap 'interrupt' SIGINT SIGTERM
 
-# Dispatch.
 for ((i=1;i<=amount;i++)); do
     name="${stream_name}_rtsp_${current_run_number}_${i}"
     rm -rf "${log_file}_${name}.log"
@@ -185,7 +182,9 @@ for ((i=1;i<=amount;i++)); do
     
     log_s "Bee #$i --- Deploying... Target: ${target}"
     log_s "Bee #$i --- Log file: ${log_file}_${name}.log"
+
     ffmpeg -re -stream_loop -1 -fflags +igndts -i "${file}" -pix_fmt yuv420p -vsync 1 -vcodec copy -acodec aac -muxdelay 0.0 -rtsp_transport tcp -t "${timeout}" -f rtsp "$target" 3>&1 1>"${log_file}_${name}.log" 2>&1 &
+    
     pid=$!
     PIDS+=("${pid}")
     sleep 1

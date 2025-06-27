@@ -1,17 +1,14 @@
 #!/bin/bash
 #===================================================================================
 #
-# FILE: rtmpbee-publisher.sh
+# FILE: rtspbee-publisher-sm.sh
 #
-# USAGE: rtmpbee-publisher.sh [endpoint] [app] [streamName] [amoun_of_streams_to_start] [amount_of_time_to_playback_in_seconds] [Red5pro_server_API_key] [mp4-file] 
+# USAGE: rtspbee-publisher-sm.sh [endpoint] [SM_username] [SM_password] [Nodegroup_name] [rtmp_port] [app] [streamName] [amoun_of_streams_to_start] [amount_of_time_to_playback_in_seconds] [mp4-file]
 #
-# EXAMPLE FOR VIDEO FILE: ./rtmpbee-publisher.sh red5pro.server.com 1935 live stream1 1 60 abc123 /path_to_video_file/bbb_480p.mp4 false
-# EXAMPLE FOR AUDIO FILE: ./rtmpbee-publisher.sh red5pro.server.com 1935 live stream1 1 60 abc123 /path_to_audio_file/audio.wav true
-# 
-# LOCAL EXAMPLE: ./rtmpbee-publisher.sh localhost live stream1 10 100 abc123 /path_to_video_file/bbb_480p.mp4 false       #This will publish 10 Streams for 100 seconds with audio
+# EXAMPLE: ./rtspbee-publisher-sm.sh red5pro.server.com example_user example_password my_nodegroup 8554 live stream1 1 60 /path_to_video_file/bbb_480p.mp4
 #
-# DESCRIPTION: Creates N-number of RTMP broadcast with file as a live stream.
-# Console output sent to log/rtmpbee_streamname_N.log and monitored for status.
+# DESCRIPTION: Creates N-number of RTSP broadcast with file as a live stream.
+# Console output sent to log/rtmp_sm_pub_N_N.log  and monitored for status.
 #
 # OPTIONS: see function ’usage’ below
 # REQUIREMENTS: ---
@@ -23,21 +20,22 @@
 #===================================================================================
 
 endpoint=$1
-port=$2
-app=$3
-stream_name=$4
-amount=$5
-timeout=$6
-api_key=$7
-file=$8
-audio_only=$9
+sm_username=$2
+sm_password=$3
+nodegroup_name=$4
+port=$5
+app=$6
+stream_name=$7
+amount=$8
+timeout=$9
+file=${10}
 
-dir="./log/rtmp_pub"
+dir="./log/rtsp_sm_pub"
 amount_of_directories=$( (find ${dir}_* -maxdepth 1 -type d 2>/dev/null | wc -l) )
 current_run_number=$((amount_of_directories+1))
 current_dir="${dir}_${current_run_number}"
 mkdir -p "${current_dir}"
-log_file="${current_dir}/rtmp_pub"
+log_file="${current_dir}/rtsp_sm_pub"
 PIDS=()
 
 log_i() {
@@ -74,10 +72,10 @@ log() {
     echo -n "[$(date '+%Y-%m-%d %H:%M:%S')]"
 }
 
-if [[ -z "$endpoint" || -z "$port" || -z "$app" || -z "$stream_name" || -z "$amount" || -z "$timeout" || -z "$api_key" || -z "$file" || -z "$audio_only" ]]; then
+if [[ -z "$sm_username" || -z "$sm_password" || -z "$nodegroup_name" || -z "$endpoint" || -z "$port" || -z "$app" || -z "$stream_name" || -z "$amount" || -z "$timeout" || -z "$file" ]]; then
     log_w "Not all arguments are set. Please check your command."
-    log_w "USAGE: ./rtmpbee-publisher.sh [endpoint] [rtmp_port] [app] [streamName] [amoun_of_streams_to_start] [amount_of_time_to_playback_in_seconds] [mp4-file] [boolean_for_audio_only]"
-    log_w "Example: ./rtmpbee-publisher.sh your.red5pro-deploy.com 1935 live stream1 10 100 abc123 /path_to_video_file/bbb_480p.mp4 false"
+    log_w "USAGE: ./rtspbee-publisher-sm.sh [endpoint] [SM_username] [SM_password] [Nodegroup_name] [rtsp_port] [app] [streamName] [amoun_of_streams_to_start] [amount_of_time_to_playback_in_seconds] [mp4-file]"
+    log_w "Example: ./rtspbee-publisher-sm.sh your.red5pro-deploy.com example_username example_password your_nodegroup_name 8554 live stream1 10 10 /path_to_video_file/bbb_480p.mp4"
     exit 1
 fi
 
@@ -138,7 +136,7 @@ function checkStatus {
     
     fail_counter=5
     success=0
-    regex_fail="Output #0, flv, to"
+    regex_fail="Output #0, rtsp, to"
     
     for ((t=1;t<=fail_counter;t++)); do
         
@@ -156,7 +154,7 @@ function checkStatus {
             break
         else
             if [ $t -eq $fail_counter ]; then
-                log_w "Bee #$beeN --- Not deployed. Please check log file ${log_file}_${name}.log and target Red5 pro server!!!"
+                log_w "Bee #$beeN --- Not deployed. Please check log file ${log_file}_${name}.log"
                 shutdown "$pid" "$file" "$name"
             fi
             sleep 1
@@ -166,31 +164,64 @@ function checkStatus {
 
 echo "--------------------------------------------------" >> ${log_file}_main.log
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
-log_i "RTMP Publish bees"
-log_i "Red5 Pro target server: $endpoint"
-log_i "Red5 Pro target port: $port"
+log_i "RTSP Publish bees"
+log_i "Red5 Stream Manager target server: $endpoint"
+log_i "Red5 Stream Manager username: $sm_username"
+log_i "Red5 Stream Manager password: $sm_password"
+log_i "Red5 Stream Manager nodegroup: $nodegroup_name"
+log_i "Red5 Pro node target port: $port"
 log_i "Stream prefix name: $stream_name"
 log_i "Amount of publisher: $amount"
 log_i "Time to live publisher: $timeout"
 log_i "Video file: $file"
-log_i "Audio only enable: $audio_only"
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
 echo "--------------------------------------------------" >> ${log_file}_main.log
 
 trap 'interrupt' SIGINT SIGTERM
 
+create_jwT_token() {
+    log_i "Creating JWT token..."
+    USER_AND_PASSWORD_IN_BASE64=$(echo -n "$sm_username:$sm_password" | base64)
+
+    for i in {1..5}; do
+        JWT_TOKEN_JSON=$(curl -s -X 'PUT' "https://$endpoint/as/v1/auth/login" -H 'accept: application/json' -H "Authorization: Basic $USER_AND_PASSWORD_IN_BASE64")
+        JWT_TOKEN=$(jq -r '.token' <<<"$JWT_TOKEN_JSON" 2>/dev/null)
+
+        if [ -z "$JWT_TOKEN" ] || [ "$JWT_TOKEN" == "null" ]; then
+            log_w "JWT token was not created! - Attempt $i"
+        else
+            log_i "JWT token created successfully."
+            break
+        fi
+
+        if [ "$i" -eq 5 ]; then
+            log_e "JWT token was not created!!! EXIT..."
+            log_w "JWT_TOKEN_JSON: $JWT_TOKEN_JSON"
+            exit 1
+        fi
+        sleep 5
+    done
+}
+
+create_jwT_token
+
 for ((i=1;i<=amount;i++)); do
-    name="${stream_name}_rtmp_${current_run_number}_${i}"
+
+    origin_node=$(curl -s --location --request GET "https:///$endpoint/as/v1/streams/stream/$nodegroup_name/publish/$name?strict=false&transcode=false&endpoints=1" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' | jq -r '.[0].serverAddress' 2>/dev/null) 
+    
+    if [[ -z "$origin_node" ]]; then
+        log_w "No Origin node found for publishing stream: $name."
+        exit 1
+    fi
+
+    name="${stream_name}_rtsp_${current_run_number}_${i}"
     rm -rf "${log_file}_${name}.log"
-    target="rtmp://${endpoint}:${port}/${app}/${name}"
+    target="rtsp://${origin_node}:${port}/${app}/${name}"
     
     log_s "Bee #$i --- Deploying... Target: ${target}"
     log_s "Bee #$i --- Log file: ${log_file}_${name}.log"
-    if [ "$audio_only" = true ]; then
-        ffmpeg -re -stream_loop -1 -fflags +genpts -i "${file}" -acodec aac -ab 128000 -ar 48000 -ac 2 -t "${timeout}" -f flv "$target" 3>&1 1>"${log_file}_${name}.log" 2>&1 &
-    else
-        ffmpeg -re -stream_loop -1 -fflags +igndts -i "${file}" -pix_fmt yuv420p -vsync 1 -vcodec copy -acodec aac -muxdelay 0.0 -t "${timeout}" -f flv "$target" 3>&1 1>"${log_file}_${name}.log" 2>&1 &
-    fi
+
+    ffmpeg -re -stream_loop -1 -fflags +igndts -i "${file}" -pix_fmt yuv420p -vsync 1 -vcodec copy -acodec aac -muxdelay 0.0 -rtsp_transport tcp -t "${timeout}" -f rtsp "$target" 3>&1 1>"${log_file}_${name}.log" 2>&1 &
 
     pid=$!
     PIDS+=("${pid}")

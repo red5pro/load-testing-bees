@@ -3,7 +3,7 @@
 #
 # FILE: rtspbee-subscriber.sh
 #
-# USAGE: rtspbee-subscriber.sh [endpoint] [amount_of_subscribers] [amount_of_time_to_playback_stream]
+# USAGE: rtspbee-subscriber.sh [endpoint] [amount_of_subscribers] [amount_of_time_to_playback_stream_in_seconds]
 #
 # EXAMPLE: ./rtspbee-subscriber.sh "rtsp://release-11.red5.net:8554/live/stream1" 1 60    # This will add 1 Subscriber to the stream for 60 seconds
 # 
@@ -67,6 +67,7 @@ log() {
 
 if [[ -z "$endpoint" || -z "$amount" || -z "$timeout" ]]; then
     log_w "Not all arguments are set. Please check your command."
+    log_w "USAGE: rtspbee-subscriber.sh [endpoint] [amount_of_subscribers] [amount_of_time_to_playback_stream_in_seconds]"
     log_w 'Example: rtspbee-subscriber.sh "rtsp://[your.red5pro-deploy.com]:8554/live/[your_stream_name]" 1 60'
     exit 1
 fi
@@ -152,8 +153,8 @@ echo "--------------------------------------------------" >> "${log_file}_main.l
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
 log_i "RTSP Subscribe bees"
 log_i "Red5 Pro target endpoint: $endpoint"
-log_i "Amount of bees $amount"
-log_i "Time to live bees: $timeout"
+log_i "Amount of subscribers: $amount"
+log_i "Time to live subscribers: $timeout"
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
 echo "--------------------------------------------------" >> "${log_file}_main.log"
 
