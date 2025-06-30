@@ -130,7 +130,7 @@ function checkStatus {
     
     fail_counter=5
     success=0
-    regex_fail="Output #0, flv, to"
+    regex_fail="Output #0"
     
     for ((t=1;t<=fail_counter;t++)); do
         
@@ -158,7 +158,7 @@ function checkStatus {
 
 echo "--------------------------------------------------" >> ${log_file}_main.log
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
-log_i "RTMP Publish bees"
+log_i "RTMP Subscribe bees"
 log_i "Red5 Stream Manager target server: $endpoint"
 log_i "Red5 Stream Manager username: $sm_username"
 log_i "Red5 Stream Manager password: $sm_password"
@@ -184,7 +184,6 @@ create_jwT_token() {
             log_w "JWT token was not created! - Attempt $i"
         else
             log_i "JWT token created successfully."
-            echo "$JWT_TOKEN"
             break
         fi
 
@@ -200,7 +199,7 @@ create_jwT_token() {
 create_jwT_token
 
 for ((i=1;i<=amount;i++)); do
-    edge_node=$(curl -s --location --request GET "https:///$endpoint/as/v1/streams/stream/$nodegroup_name/subscribe/$stream_name?strict=false&endpoints=1" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' | jq -r '.[0].serverAddress' 2>/dev/null) 
+    edge_node=$(curl -s --location --request GET "https:///$endpoint/as/v1/streams/stream/$nodegroup_name/subscribe/live/$stream_name?strict=false&endpoints=1" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' | jq -r '.[0].serverAddress' 2>/dev/null) 
     
     if [[ -z "$edge_node" ]]; then
         log_w "No Edge node found for subscribing stream: $stream_name."

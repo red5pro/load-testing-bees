@@ -1,40 +1,47 @@
 #!/bin/bash
 #===================================================================================
 #
-# FILE: rtspbee-subscriber-sm.sh
+# FILE: webrtcbee-publisher.sh
 #
-# USAGE: rtspbee-subscriber-sm.sh [endpoint] [SM_username] [SM_password] [Nodegroup_name] [rtmp_port] [app] [streamName] [amount_of_subscribers] [amount_of_time_to_playback]
+# USAGE: webrtcbee-publisher.sh [basic-publisher.html_endpoint_with_params] [amount_of_streams_to_start] [stream_name] [amount_of_time_to_playback_in_seconds] [path_to_the_video_file.y4m] [path_to_the_audio_file.wav]
 #
-# EXAMPLE: ./rtspbee-subscriber-sm.sh red5pro.server.com example_user example_password my_nodegroup 8554 live stream1 1 60 
+# EXAMPLE FOR VIDEO+AUDIO:  ./webrtcbee-publisher.sh "https://your.red5pro-deploy.com/live/basic-publisher.html?vw=1280&vh=720&fr=30&bwV=1500&bwA=56&audio=1&video=1" stream1 10 60 /path_to_the_video_file/test.y4m /path_to_the_audio_file/test.wav
+# EXAMPLE FOR AUDIO ONLY:  ./webrtcbee-publisher.sh "https://your.red5pro-deploy.com/live/basic-publisher.html?vw=1280&vh=720&fr=30&bwV=1500&bwA=56&audio=1&video=0" stream1 10 60 null /path_to_the_audio_file/test.wav
 #
-# DESCRIPTION: Creates N-number of RTSP subscribers to a given endpoint.
-# Console output sent to log/rtmp_sm_sub_N_N.log and monitored for status.
+# DESCRIPTION: Creates N-number of headless WebRTC-based publishers for a live stream.
+# Console output sent to log/rtcbee_N.log and monitored for status.
 #
 # OPTIONS: see function ’usage’ below
 # REQUIREMENTS: ---
 # BUGS: ---
 # NOTES: ---
-# AUTHOR: Todd Anderson, Oles Prykhodko
+# AUTHOR: Oles Prykhodko
 # COMPANY: Infrared5, Inc.
 # VERSION: 2.0.0
 #===================================================================================
 
-endpoint=$1
-sm_username=$2
-sm_password=$3
-nodegroup_name=$4
-port=$5
-app=$6
-stream_name=$7
-amount=$8
-timeout=$9
+# Publish WebRTC stream with video and audio
+# ./webrtcbee-publisher.sh "https://your-server.red5.net/live/basic-publisher.html?vw=1920&vh=1080&fr=30&bwV=4500&bwA=56&audio=1&video=1" stream1 1 60 /home/ubuntu/video_examples/240p.y4m /home/ubuntu/video_examples/test_high.wav
 
-dir="./log/rtmp_sm_sub"
+# Publish WebRTC stream with audio only
+# ./webrtcbee-publisher.sh "https://your-server.red5.net/live/basic-publisher.html?vw=1920&vh=1080&fr=30&bwV=4500&bwA=56&audio=1&video=0" stream1 1 60  null /home/ubuntu/video_examples/test_high.wav
+
+endpoint=$1
+stream_name=$2
+amount=$3
+timeout=$4 
+video_file=$5
+audio_file=$6
+
+dir="./log/webrtc_pub"
 amount_of_directories=$( (find ${dir}_* -maxdepth 1 -type d 2>/dev/null | wc -l) )
 current_run_number=$((amount_of_directories+1))
 current_dir="${dir}_${current_run_number}"
 mkdir -p "${current_dir}"
-log_file="${current_dir}/rtmp_sm_sub"
+log_file="${current_dir}/webrtc_pub"
+
+DEBUG_PORT_START=$(((RANDOM % 10000)+10000));
+
 PIDS=()
 
 log_i() {
@@ -71,10 +78,10 @@ log() {
     echo -n "[$(date '+%Y-%m-%d %H:%M:%S')]"
 }
 
-if [[ -z "$sm_username" || -z "$sm_password" || -z "$nodegroup_name" || -z "$endpoint" || -z "$port" || -z "$app" || -z "$stream_name" || -z "$amount" || -z "$timeout" ]]; then
+if [[ -z "$endpoint" || -z "$stream_name" || -z "$amount" || -z "$timeout" || -z "$video_file" || -z "$audio_file" ]]; then
     log_w "Not all arguments are set. Please check your command."
-    log_w "USAGE: ./rtspbee-subscriber-sm.sh [endpoint] [SM_username] [SM_password] [Nodegroup_name] [rtsp_port] [app] [streamName] [amount_of_subscribers] [amount_of_time_to_playback]"
-    log_w "Example: ./rtspbee-subscriber-sm.sh your.red5pro-deploy.com example_username example_password your_nodegroup_name 8554 live stream1 10 10 "
+    log_w "USAGE: ./webrtcbee-publisher.sh [basic-publisher.html_endpoint_with_params] [stream_name] [amount_of_streams_to_start] [amount_of_time_to_playback_in_seconds] [path_to_the_video_file.y4m] [path_to_the_audio_file.wav]"
+    log_w "Example: ./webrtcbee-publisher.sh 'https://your_server.com/live/basic-publisher.html?vw=1920&vh=1080&fr=30&bwV=4500&bwA=56&audio=1&video=1' stream1 1 60 /home/ubuntu/video_examples/240p.y4m /home/ubuntu/video_examples/test_high.wav"
     exit 1
 fi
 
@@ -85,6 +92,7 @@ fi
 
 function shutdown {
     local pid=$1
+    local file=$2
 
     for ((p=1;p<=5;p++)); do
         if ps -p "$pid" > /dev/null
@@ -99,6 +107,7 @@ function shutdown {
         fi
         sleep 0.4
     done
+    rm -f "$file"
 }
 
 #=== FUNCTION ================================================================
@@ -111,7 +120,7 @@ function interrupt {
     for index in ${!PIDS[*]}
     do
         local i=$((index+1))
-        shutdown "${PIDS[${index}]}"
+        shutdown "${PIDS[${index}]}" "${file}_${stream_name}_${i}" "${stream_name}_${i}"
     done
     exit 0
 }
@@ -124,16 +133,16 @@ function interrupt {
 function checkStatus {
     local pid=$1
     local timeout=$2
-    local file=$3
+    local stream_file=$3
     local name=$4
     local beeN=$5
     
-    fail_counter=5
+    fail_counter=90
     success=0
-    regex_fail="Output #0"
+    regex_fail="Publish.Start"
     
     for ((t=1;t<=fail_counter;t++)); do
-        
+       
         while read -r line
         do
             if [[ $line =~ $regex_fail ]]; then
@@ -144,12 +153,12 @@ function checkStatus {
         if [ $success -eq 1 ]; then
             log_s "Bee #$beeN --- Deployed. Will kill in ${timeout} seconds, PID:${pid}"
             sleep "$timeout"
-            shutdown "$pid" "$file" "$name"
+            shutdown "$pid" "$stream_file" "$name"
             break
         else
             if [ $t -eq $fail_counter ]; then
-                log_w "Bee #$beeN --- Not deployed. Please check log file ${log_file}_${name}.log"
-                shutdown "$pid" "$file" "$name"
+                log_w "Bee #$beeN --- Not deployed. Please check log file ${log_file}_${name}.log and target Red5 pro server!!!"
+                shutdown "$pid" "$stream_file" "$name"
             fi
             sleep 1
         fi
@@ -158,69 +167,50 @@ function checkStatus {
 
 echo "--------------------------------------------------" >> ${log_file}_main.log
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
-log_i "RTSP Subscribe bees"
-log_i "Red5 Stream Manager target server: $endpoint"
-log_i "Red5 Stream Manager username: $sm_username"
-log_i "Red5 Stream Manager password: $sm_password"
-log_i "Red5 Stream Manager nodegroup: $nodegroup_name"
-log_i "Red5 Pro node target port: $port"
-log_i "Stream name: $stream_name"
-log_i "Amount of Subscriber: $amount"
-log_i "Time to live bees subscriber: $timeout"
+log_i "WebRTC Publish bees"
+log_i "Red5 Pro target server: $endpoint"
+log_i "Stream prefix name: $stream_name"
+log_i "Amount of publisher: $amount"
+log_i "Time to live publisher: $timeout"
+log_i "Video file: $video_file"
+log_i "Audio file: $audio_file"
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
 echo "--------------------------------------------------" >> ${log_file}_main.log
 
 trap 'interrupt' SIGINT SIGTERM
 
-create_jwT_token() {
-    log_i "Creating JWT token..."
-    USER_AND_PASSWORD_IN_BASE64=$(echo -n "$sm_username:$sm_password" | base64)
-
-    for i in {1..5}; do
-        JWT_TOKEN_JSON=$(curl -s -X 'PUT' "https://$endpoint/as/v1/auth/login" -H 'accept: application/json' -H "Authorization: Basic $USER_AND_PASSWORD_IN_BASE64")
-        JWT_TOKEN=$(jq -r '.token' <<<"$JWT_TOKEN_JSON" 2>/dev/null)
-
-        if [ -z "$JWT_TOKEN" ] || [ "$JWT_TOKEN" == "null" ]; then
-            log_w "JWT token was not created! - Attempt $i"
-        else
-            log_i "JWT token created successfully."
-            break
-        fi
-
-        if [ "$i" -eq 5 ]; then
-            log_e "JWT token was not created!!! EXIT..."
-            log_w "JWT_TOKEN_JSON: $JWT_TOKEN_JSON"
-            exit 1
-        fi
-        sleep 5
-    done
-}
-
-create_jwT_token
-
 for ((i=1;i<=amount;i++)); do
-    edge_node=$(curl -s --location --request GET "https:///$endpoint/as/v1/streams/stream/$nodegroup_name/subscribe/live/$stream_name?strict=false&endpoints=1" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' | jq -r '.[0].serverAddress' 2>/dev/null) 
-    
-    if [[ -z "$edge_node" ]]; then
-        log_w "No Edge node found for subscribing stream: $stream_name."
-        exit 1
+    name="${stream_name}_webrtc_${current_run_number}_${i}"
+    debug_port=$((DEBUG_PORT_START + i))
+
+    if [ -f "${log_file}_${name}.log" ]; then
+        rm -rf "${log_file}_${name}.log"
     fi
 
-    stream_endpoint="rtmp://${edge_node}:${port}/${app}/${stream_name}"
-    name="${current_run_number}_${i}"
-    rm -rf "${log_file}_${name}.log"
-    log_s "Bee #$i --- Deploying... Target: ${stream_endpoint}"
+    endpoint_with_params="${endpoint}&streamName=${name}"
+    
+    log_s "Bee #$i --- Target: ${endpoint_with_params}"
     log_s "Bee #$i --- Log file: ${log_file}_${name}.log"
-
-    ffmpeg -loglevel verbose -i "$stream_endpoint" -t "${timeout}" -f null - 3>&1 1>"${log_file}_${name}.log" 2>&1 &
+    chromium-browser \
+    --use-fake-ui-for-media-stream \
+    --allow-file-access \
+    --use-fake-device-for-media-stream \
+    --use-file-for-fake-audio-capture="$audio_file" \
+    --use-file-for-fake-video-capture="$video_file" \
+    --user-data-dir=/tmp/chrome"$(date +%s%N)" \
+    --headless \
+    --disable-gpu \
+    --mute-audio \
+    --window-size=1024,768 \
+    --remote-debugging-port="$debug_port" "$endpoint_with_params" 3>&1 1>"${log_file}_${name}.log" 2>&1 &
 
     pid=$!
     PIDS+=("${pid}")
     sleep 1
     if [ "$i" -eq "$amount" ]; then
-        (checkStatus "$pid" "$timeout" "$file" "$name" "$i")
+        (checkStatus "$pid" "$timeout" "$stream_file" "$name" "$i")
     else
-        (checkStatus "$pid" "$timeout" "$file" "$name" "$i")&
+        (checkStatus "$pid" "$timeout" "$stream_file" "$name" "$i")&
     fi
     sleep 0.2
 done

@@ -212,7 +212,7 @@ create_jwT_token
 
 for ((i=1;i<=amount;i++)); do
     name="${stream_name}_rtmp_${current_run_number}_${i}"
-    origin_node=$(curl -s --location --request GET "https:///$endpoint/as/v1/streams/stream/$nodegroup_name/publish/$name?strict=false&transcode=false&endpoints=1" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' | jq -r '.[0].serverAddress' 2>/dev/null) 
+    origin_node=$(curl -s --location --request GET "https:///$endpoint/as/v1/streams/stream/$nodegroup_name/publish/live/$name?strict=false&transcode=false&endpoints=1" --header "Authorization: Bearer ${JWT_TOKEN}" --header 'Content-Type: application/json' | jq -r '.[0].serverAddress' 2>/dev/null) 
     
     if [[ -z "$origin_node" ]]; then
         log_w "No Origin node found for publishing stream: $name."
