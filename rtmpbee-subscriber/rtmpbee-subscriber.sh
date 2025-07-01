@@ -67,7 +67,7 @@ log() {
 
 if [[ -z "$endpoint" || -z "$amount" || -z "$timeout" ]]; then
     log_w "Not all arguments are set. Please check your command."
-    log_w 'Example: rtspbee-subscriber.sh "rtmp://[your.red5pro-deploy.com]:1935/live/[your_stream_name]" 1 60'
+    log_w 'Example: rtmpbee-subscriber.sh "rtmp://[your.red5pro-deploy.com]:1935/live/[your_stream_name]" 1 60'
     exit 1
 fi
 

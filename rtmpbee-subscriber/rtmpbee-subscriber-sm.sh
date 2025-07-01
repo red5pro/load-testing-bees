@@ -3,7 +3,7 @@
 #
 # FILE: rtmpbee-subscriber-sm.sh
 #
-# USAGE: rtmpbee-subscriber-sm.sh [endpoint] [SM_username] [SM_password] [Nodegroup_name] [rtmp_port] [app] [streamName] [amount_of_subscribers] [amount_of_time_to_playback]
+# USAGE: rtmpbee-subscriber-sm.sh [endpoint] [SM_username] [SM_password] [Nodegroup_name] [rtmp_port] [app] [streamName] [amount_of_subscribers] [amount_of_time_to_playback_in_seconds]
 #
 # EXAMPLE: ./rtmpbee-subscriber-sm.sh red5pro.server.com example_user example_password my_nodegroup 1935 live stream1 1 60 
 #

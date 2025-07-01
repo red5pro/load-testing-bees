@@ -3,10 +3,15 @@
 #
 # FILE: webrtcbee-publisher.sh
 #
-# USAGE: webrtcbee-publisher.sh [basic-publisher.html_endpoint_with_params] [amount_of_streams_to_start] [stream_name] [amount_of_time_to_playback_in_seconds] [path_to_the_video_file.y4m] [path_to_the_audio_file.wav]
+# USAGE: webrtcbee-publisher.sh [*publisher.html_endpoint_with_params] [server_deployment_type_standalone_or_stream_manager] [amount_of_streams_to_start] [stream_name] [amount_of_time_to_playback_in_seconds] [path_to_the_video_file.y4m] [path_to_the_audio_file.wav]
 #
-# EXAMPLE FOR VIDEO+AUDIO:  ./webrtcbee-publisher.sh "https://your.red5pro-deploy.com/live/basic-publisher.html?vw=1280&vh=720&fr=30&bwV=1500&bwA=56&audio=1&video=1" stream1 10 60 /path_to_the_video_file/test.y4m /path_to_the_audio_file/test.wav
-# EXAMPLE FOR AUDIO ONLY:  ./webrtcbee-publisher.sh "https://your.red5pro-deploy.com/live/basic-publisher.html?vw=1280&vh=720&fr=30&bwV=1500&bwA=56&audio=1&video=0" stream1 10 60 null /path_to_the_audio_file/test.wav
+# For STANDALONE Server Setup
+# EXAMPLE FOR VIDEO+AUDIO:  ./webrtcbee-publisher.sh "https://your.red5pro-deploy.com/live/basic-publisher.html?vw=1280&vh=720&fr=30&bwV=1500&bwA=56&audio=1&video=1" standalone stream1 10 60 /path_to_the_video_file/test.y4m /path_to_the_audio_file/test.wav
+# EXAMPLE FOR AUDIO ONLY:  ./webrtcbee-publisher.sh "https://your.red5pro-deploy.com/live/basic-publisher.html?vw=1280&vh=720&fr=30&bwV=1500&bwA=56&audio=1&video=0" standalone stream1 10 60 null /path_to_the_audio_file/test.wav
+#
+# For STREAM_MANAGER Server setup
+# EXAMPLE FOR VIDEO+AUDIO:  ./webrtcbee-publisher-sm.sh "https://your.red5pro-deploy.com/red5/proxy-publisher.html?cameraWidth=1280&cameraHeight=720&fr=30&bwV=1500&bwA=56&video=1&audio=1&protocol=wss&port=443&whipwhep=true&verbose=1" stream_manager stream1 10 60 /path_to_the_video_file/test.y4m /path_to_the_audio_file/test.wav
+# EXAMPLE FOR AUDIO ONLY:  ./webrtcbee-publisher-sm.sh "https://your.red5pro-deploy.com/red5/proxy-publisher.html?cameraWidth=1280&cameraHeight=720&fr=30&bwV=1500&bwA=56&video=0&audio=1&protocol=wss&port=443&whipwhep=true&verbose=1" stream_manager stream1 10 60 null /path_to_the_audio_file/test.wav
 #
 # DESCRIPTION: Creates N-number of headless WebRTC-based publishers for a live stream.
 # Console output sent to log/rtcbee_N.log and monitored for status.
@@ -20,28 +25,55 @@
 # VERSION: 2.0.0
 #===================================================================================
 
+# For STANDALONE Server setup
 # Publish WebRTC stream with video and audio
-# ./webrtcbee-publisher.sh "https://your-server.red5.net/live/basic-publisher.html?vw=1920&vh=1080&fr=30&bwV=4500&bwA=56&audio=1&video=1" stream1 1 60 /home/ubuntu/video_examples/240p.y4m /home/ubuntu/video_examples/test_high.wav
-
+# ./webrtcbee-publisher.sh "https://your-server.red5.net/live/basic-publisher.html?vw=1920&vh=1080&fr=30&bwV=4500&bwA=56&audio=1&video=1" standalone stream1 1 60 /home/ubuntu/video_examples/240p.y4m /home/ubuntu/video_examples/test_high.wav
 # Publish WebRTC stream with audio only
-# ./webrtcbee-publisher.sh "https://your-server.red5.net/live/basic-publisher.html?vw=1920&vh=1080&fr=30&bwV=4500&bwA=56&audio=1&video=0" stream1 1 60  null /home/ubuntu/video_examples/test_high.wav
+# ./webrtcbee-publisher.sh "https://your-server.red5.net/live/basic-publisher.html?vw=1920&vh=1080&fr=30&bwV=4500&bwA=56&audio=1&video=0" standalone stream1 1 60  null /home/ubuntu/video_examples/test_high.wav
+
+
+# For STREAM_MANAGER Server setup
+# Publish WebRTC stream with video and audio
+# ./webrtcbee-publisher.sh "https://your.red5pro-deploy.com/red5/proxy-publisher.html?cameraWidth=1280&cameraHeight=720&fr=30&bwV=1500&bwA=56&video=1&audio=1&protocol=wss&port=443&whipwhep=true&verbose=1" stream_manager stream1 1 60 /home/ubuntu/video_examples/240p.y4m /home/ubuntu/video_examples/test_high.wav
+# Publish WebRTC stream with audio only
+# ./webrtcbee-publisher.sh "https://your.red5pro-deploy.com/red5/proxy-publisher.html?cameraWidth=1280&cameraHeight=720&fr=30&bwV=1500&bwA=56&video=0&audio=1&protocol=wss&port=443&whipwhep=true&verbose=1" stream_manager stream1 1 60  null /home/ubuntu/video_examples/test_high.wav
+
+
 
 endpoint=$1
-stream_name=$2
-amount=$3
-timeout=$4 
-video_file=$5
-audio_file=$6
+deployment_type=$2
+stream_name=$3
+amount=$4
+timeout=$5 
+video_file=$6
+audio_file=$7
 
-dir="./log/webrtc_pub"
-amount_of_directories=$( (find ${dir}_* -maxdepth 1 -type d 2>/dev/null | wc -l) )
-current_run_number=$((amount_of_directories+1))
-current_dir="${dir}_${current_run_number}"
-mkdir -p "${current_dir}"
-log_file="${current_dir}/webrtc_pub"
+case "$deployment_type" in
+    standalone)
+        deployment_type="standalone"
+        dir="./log/webrtc_pub"
+        amount_of_directories=$( (find ${dir}_* -maxdepth 1 -type d 2>/dev/null | wc -l) )
+        current_run_number=$((amount_of_directories+1))
+        current_dir="${dir}_${current_run_number}"
+        mkdir -p "${current_dir}"
+        log_file="${current_dir}/webrtc_pub"
+        ;;
+    stream_manager)
+        deployment_type="stream_manager"
+        dir="./log/webrtc_sm_pub"
+        amount_of_directories=$( (find ${dir}_* -maxdepth 1 -type d 2>/dev/null | wc -l) )
+        current_run_number=$((amount_of_directories+1))
+        current_dir="${dir}_${current_run_number}"
+        mkdir -p "${current_dir}"
+        log_file="${current_dir}/webrtc_sm_pub"
+        ;;
+    *)
+        echo "Error: Invalid deployment type for parameter [server_deployment_type_standalone_or_stream_manager]: '$deployment_type'. Must be 'standalone' or 'stream_manager'."
+        exit 1
+        ;;
+esac
 
 DEBUG_PORT_START=$(((RANDOM % 10000)+10000));
-
 PIDS=()
 
 log_i() {
@@ -78,12 +110,14 @@ log() {
     echo -n "[$(date '+%Y-%m-%d %H:%M:%S')]"
 }
 
-if [[ -z "$endpoint" || -z "$stream_name" || -z "$amount" || -z "$timeout" || -z "$video_file" || -z "$audio_file" ]]; then
+if [[ -z "$deployment_type" || -z "$endpoint" || -z "$stream_name" || -z "$amount" || -z "$timeout" || -z "$video_file" || -z "$audio_file" ]]; then
     log_w "Not all arguments are set. Please check your command."
-    log_w "USAGE: ./webrtcbee-publisher.sh [basic-publisher.html_endpoint_with_params] [stream_name] [amount_of_streams_to_start] [amount_of_time_to_playback_in_seconds] [path_to_the_video_file.y4m] [path_to_the_audio_file.wav]"
-    log_w "Example: ./webrtcbee-publisher.sh 'https://your_server.com/live/basic-publisher.html?vw=1920&vh=1080&fr=30&bwV=4500&bwA=56&audio=1&video=1' stream1 1 60 /home/ubuntu/video_examples/240p.y4m /home/ubuntu/video_examples/test_high.wav"
+    log_w "USAGE: ./webrtcbee-publisher.sh [*publisher.html_endpoint_with_params] [server_deployment_type_standalone_or_stream_manager] [stream_name] [amount_of_streams_to_start] [amount_of_time_to_playback_in_seconds] [path_to_the_video_file.y4m] [path_to_the_audio_file.wav]"
+    log_w "Example for Standalone server: ./webrtcbee-publisher.sh 'https://your_server.com/live/basic-publisher.html?vw=1920&vh=1080&fr=30&bwV=4500&bwA=56&audio=1&video=1' standalone stream1 1 60 /home/ubuntu/video_examples/240p.y4m /home/ubuntu/video_examples/test_high.wav"
+    log_w "Example for Stream manager server: ./webrtcbee-publisher.sh 'https://your.red5pro-deploy.com/red5/proxy-publisher.html?cameraWidth=1280&cameraHeight=720&fr=30&bwV=1500&bwA=56&video=1&audio=1&protocol=wss&port=443&whipwhep=true&verbose=1' stream_manager stream1 1 60 /home/ubuntu/video_examples/240p.y4m /home/ubuntu/video_examples/test_high.wav"
     exit 1
 fi
+
 
 #=== FUNCTION ================================================================
 # NAME: shutdown
@@ -169,6 +203,7 @@ echo "--------------------------------------------------" >> ${log_file}_main.lo
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
 log_i "WebRTC Publish bees"
 log_i "Red5 Pro target server: $endpoint"
+log_i "Server type: $deployment_type"
 log_i "Stream prefix name: $stream_name"
 log_i "Amount of publisher: $amount"
 log_i "Time to live publisher: $timeout"

@@ -3,7 +3,7 @@
 #
 # FILE: rtspbee-subscriber-sm.sh
 #
-# USAGE: rtspbee-subscriber-sm.sh [endpoint] [SM_username] [SM_password] [Nodegroup_name] [rtmp_port] [app] [streamName] [amount_of_subscribers] [amount_of_time_to_playback]
+# USAGE: rtspbee-subscriber-sm.sh [endpoint] [SM_username] [SM_password] [Nodegroup_name] [rtmp_port] [app] [streamName] [amount_of_subscribers] [amount_of_time_to_playback_in_seconds]
 #
 # EXAMPLE: ./rtspbee-subscriber-sm.sh red5pro.server.com example_user example_password my_nodegroup 8554 live stream1 1 60 
 #
@@ -73,7 +73,7 @@ log() {
 
 if [[ -z "$sm_username" || -z "$sm_password" || -z "$nodegroup_name" || -z "$endpoint" || -z "$port" || -z "$app" || -z "$stream_name" || -z "$amount" || -z "$timeout" ]]; then
     log_w "Not all arguments are set. Please check your command."
-    log_w "USAGE: ./rtspbee-subscriber-sm.sh [endpoint] [SM_username] [SM_password] [Nodegroup_name] [rtsp_port] [app] [streamName] [amount_of_subscribers] [amount_of_time_to_playback]"
+    log_w "USAGE: ./rtspbee-subscriber-sm.sh [endpoint] [SM_username] [SM_password] [Nodegroup_name] [rtsp_port] [app] [streamName] [amount_of_subscribers] [amount_of_time_to_playback_in_seconds]"
     log_w "Example: ./rtspbee-subscriber-sm.sh your.red5pro-deploy.com example_username example_password your_nodegroup_name 8554 live stream1 10 10 "
     exit 1
 fi

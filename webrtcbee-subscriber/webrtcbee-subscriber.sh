@@ -3,9 +3,13 @@
 #
 # FILE: webrtcbee-subscriber.sh
 #
-# USAGE: webrtcbee-subscriber.sh [endpoint] [stream name] [amount of streams to start] [amount of time to playback]
+# USAGE: webrtcbee-subscriber.sh [endpoint] [server_deployment_type_standalone_or_stream_manager] [stream_name] [amount_of_subscribers] [amount_of_time_to_playback_stream_in_seconds]
 #
-# EXAMPLE: ./webrtcbee-subscriber.sh "https://your.server.com/live/viewer.jsp?host=your.server.com" stream1 5 30
+# For STANDALONE Server Setup
+# EXAMPLE: ./webrtcbee-subscriber.sh "https://your.server.com/live/viewer.jsp?host=your.server.com" standalone stream1 5 30
+#
+# For STREAM_MANAGER Server setup
+# EXAMPLE: ./webrtcbee-subscriber.sh "https://your.server.com/red5/proxy-subscriber.html?host=your.server.com&protocol=wss&port=443&whipwhep=true&verbose=1" stream_manager stream1 5 30
 #
 # DESCRIPTION: Creates N-number of headless WebRTC-based subscriptions to a live stream.
 # Console output sent to log/webrtc_sub_N.log and monitored for status.
@@ -21,9 +25,10 @@
 #===================================================================================
 
 endpoint=$1
-stream_name=$2
-amount=$3
-timeout=$4
+deployment_type=$2
+stream_name=$3
+amount=$4
+timeout=$5
 mode="true" # (enable old scenario 1 after 1)
 
 # The latest versions of chromium-browser can't support multiple tabs in headless mode.
@@ -31,16 +36,34 @@ mode="true" # (enable old scenario 1 after 1)
 # https://chromium.googlesource.com/chromium/src/+/master/headless/app/headless_shell.cc
 # Variable 'mode' should be set to 'true'
 
-dir="./log/webrtc_sub"
-amount_of_directories=$( (find ${dir}_* -maxdepth 1 -type d 2>/dev/null | wc -l) )
-current_dir_number=$((amount_of_directories+1))
-current_dir="${dir}_${current_dir_number}"
-mkdir -p "${current_dir}"
-log_file="${current_dir}/webrtc_sub"
+case "$deployment_type" in
+    standalone)
+        deployment_type="standalone"
+        dir="./log/webrtc_sub"
+        amount_of_directories=$( (find ${dir}_* -maxdepth 1 -type d 2>/dev/null | wc -l) )
+        current_dir_number=$((amount_of_directories+1))
+        current_dir="${dir}_${current_dir_number}"
+        mkdir -p "${current_dir}"
+        log_file="${current_dir}/webrtc_sub"
+        ;;
+    stream_manager)
+        deployment_type="stream_manager"
+        dir="./log/webrtc_sm_sub"
+        amount_of_directories=$( (find ${dir}_* -maxdepth 1 -type d 2>/dev/null | wc -l) )
+        current_dir_number=$((amount_of_directories+1))
+        current_dir="${dir}_${current_dir_number}"
+        mkdir -p "${current_dir}"
+        log_file="${current_dir}/webrtc_sm_sub"
+        ;;
+    *)
+        echo "Error: Invalid deployment type for parameter [server_deployment_type_standalone_or_stream_manager]: '$deployment_type'. Must be 'standalone' or 'stream_manager'."
+        exit 1
+        ;;
+esac
 
 DEBUG_PORT_START=$(((RANDOM % 10000)+10000));
-
 PIDS=()
+
 log_i() {
     log
     printf "\033[0;36m [INFO]  --- %s \033[0m\n" "${@}"
@@ -75,10 +98,11 @@ log() {
     echo -n "[$(date '+%Y-%m-%d %H:%M:%S')]"
 }
 
-if [[ -z "$endpoint" || -z "$amount" || -z "$timeout" || -z "$stream_name"  ]]; then
+if [[ -z "$deployment_type" || -z "$endpoint" || -z "$amount" || -z "$timeout" || -z "$stream_name"  ]]; then
     log_w "Not all arguments are set. Please check your command."
-    log_w "USAGE: webrtcbee-subscriber.sh [endpoint] [stream_name] [amount_of_subscribers] [amount_of_time_to_playback_stream_in_seconds]"
-    log_w 'Example: webrtcbee-subscriber.sh "https://your.server.com/live/viewer.jsp?host=your.server.com" stream1 1 60'
+    log_w "USAGE: webrtcbee-subscriber.sh [endpoint] [server_deployment_type_standalone_or_stream_manager] [stream_name] [amount_of_subscribers] [amount_of_time_to_playback_stream_in_seconds]"
+    log_w 'Example for Standalone server: webrtcbee-subscriber.sh "https://your.server.com/live/viewer.jsp?host=your.server.com" standalone stream1 1 60'
+    log_w 'Example for Stream manager server: webrtcbee-subscriber.sh "https://your.server.com/red5/proxy-subscriber.html?host=your.server.com&protocol=wss&port=443&whipwhep=true&verbose=1" stream_manager stream1 1 60'
     exit 1
 fi
 
@@ -188,6 +212,7 @@ printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
 echo "--------------------------------------------------" >> ${log_file}_main.log
 log_i "WebRTC Subscribe bees"
 log_i "Red5 Pro target endpoint: $endpoint"
+log_i "Server type: $deployment_type"
 log_i "Stream name: $stream_name"
 log_i "Amount of subscriber $amount"
 log_i "Time to live subscriber: $timeout"
@@ -197,7 +222,11 @@ echo "--------------------------------------------------" >> ${log_file}_main.lo
 
 trap 'interrupt' SIGINT SIGTERM
 
-endpoint_with_params="${endpoint}&stream=${stream_name}"
+if [[ $deployment_type == "standalone" ]]; then
+    endpoint_with_params="${endpoint}&stream=${stream_name}"
+else
+    endpoint_with_params="${endpoint}&streamName=${stream_name}"
+fi
 
 if [[ "$mode" == "true" ]]; then
     log_i "Enable old scenario 1 after 1"
