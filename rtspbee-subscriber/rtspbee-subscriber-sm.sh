@@ -176,14 +176,13 @@ for ((i=1;i<=amount;i++)); do
         exit 1
     fi
 
-    stream_endpoint="rtmp://${edge_node}:${port}/${app}/${stream_name}"
+    stream_endpoint="rtsp://${edge_node}:${port}/${app}/${stream_name}"
     name="${current_run_number}_${i}"
     rm -rf "${log_file}_${name}.log"
     log_s "Bee #$i --- Deploying... Target: ${stream_endpoint}"
     log_s "Bee #$i --- Log file: ${log_file}_${name}.log"
 
-    ffmpeg -loglevel verbose -i "$stream_endpoint" -t "${timeout}" -f null - 3>&1 1>"${log_file}_${name}.log" 2>&1 &
-
+    ffmpeg -loglevel verbose -rtsp_transport tcp -i "$stream_endpoint" -t "${timeout}" -f null - 3>&1 1>"${log_file}_${name}.log" 2>&1 &
     pid=$!
     PIDS+=("${pid}")
     sleep 1
