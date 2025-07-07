@@ -1,30 +1,28 @@
-# rtmpbee-publisher
-RTMP Bee Publisher
+## **RTMP Publisher Bees**
 
-# Download BBB
-* 480p HD [http://bbb3d.renderfarming.net/download.html](http://bbb3d.renderfarming.net/download.html)
+RTMP protocol based publishing for Red5 Pro Standalone and Stream manager2.0 servers.
 
-# Convert from AVI to FLV
-[Settings Reference](https://www.ezs3.com/public/What_bitrate_should_I_use_when_encoding_my_video_How_do_I_optimize_my_video_for_the_web.cfm)
+### REQUIREMENTS
 
-## Using ffmpeg
-```sh
-$ ffmpeg -i big_buck_bunny_480p_surround-fix.avi -y -ab 56k -ar 44100 -b:a 54k -b:v 750k -r 24 -f flv output.flv
-```
+Scripts uses a lot of resources, better to use AWS large instances, such as: `c5.9xlarge` or `c5.18xlarge`. Prepare the server by installing below dependencies to execute these load test scripts.
 
-# Streaming
+Store the video file on the server which will be utilized for publishing.
 
-## Using ffmpeg
-```sh
-$ ffmpeg -re -stream_loop -1 -fflags +genpts -i output.flv -c copy -f flv rtmp://10.0.0.10:1935/live/stream1todd
-```
+- Install **jq** (Linux or Mac OS only)
+  - Linux: `apt install jq`
+  - MacOS: `brew install jq`
 
-# Attacking
-The following will deploy 10 RTMP publishers (`0.2` seconds apart) which will broadcast for 30 seconds each. Their stream names will be appended by `_N`, where `N` rerpesents the number in the sequence that they were deployed - e.g., `stream1_0`, `stream1_1`, etc.
+- Install **ffmpeg** (Linux or Mac OS only)
+  - Linux: `apt install ffmpeg`
+  - MacOS: `brew install ffmpeg`
 
-The script will also create `N`-number of copies of the FLV file so that each process is working with their own file for broadcast.
-
-## Using rtmpbee-publisher.sh
-```sh
-$ ./rtmpbee-publisher.sh ipv6west.red5.org live stream1 10 30 bbb_480p.flv
-```
+### For Red5 Pro Standalone Server
+- USAGE: rtmpbee-publisher.sh [endpoint] [rtmp_port] [app] [streamName] [amoun_of_streams_to_start] [amount_of_time_to_playback_in_seconds] [mp4-file] [boolean_for_audio_only]
+    ```bash
+    bash ./rtmpbee-publisher.sh your.red5pro-deploy.com 1935 live stream1 10 100 abc123 ./path_to_video_file/bbb_480p.mp4 false
+    ```
+### For Stream Manager2.0
+- USAGE: rtmpbee-publisher-sm.sh [endpoint] [Nodegroup_name] [rtmp_port] [app] [streamName] [amoun_of_streams_to_start] [amount_of_time_to_playback_in_seconds] [mp4-file] [boolean_for_audio_only]
+    ```bash
+    bash ./rtmpbee-publisher-sm.sh your.red5pro-deploy.com your_nodegroup_name 1935 live stream1 10 10 /path_to_video_file/bbb_480p.mp4 false
+    ```
