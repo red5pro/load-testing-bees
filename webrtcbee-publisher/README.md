@@ -16,6 +16,16 @@ Store the video and audio file on the server which will be utilized for publishi
   - Linux: `apt install chromium-browser`
   - MacOS: `brew install --cask chromium`
 
+### Prepairing Audio and Video files
+  - Video file:
+    ```
+    ffmpeg -i ./your_input_video.mp4 -pix_fmt yuv420p ./output_video_file.y4m
+    ```
+  - Audio file:
+    ```
+    ffmpeg -i ./your_input_video.mp4 ./output_audio_file.wav
+    ```
+
 ### For Red5 Pro Standalone server
 - USAGE: webrtcbee-publisher.sh [*publisher.html_endpoint_with_params] [stream_name] [amount_of_streams_to_start] [amount_of_time_to_playback_in_seconds] [path_to_the_video_file.y4m] [path_to_the_audio_file.wav]
     ```bash
