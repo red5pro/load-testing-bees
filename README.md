@@ -97,3 +97,7 @@ Store the video and audio file on the server which will be utilized for publishi
         bash ./webrtcbee-publisher.sh 'https://your.red5pro-deploy.com/red5/proxy-publisher.html?cameraWidth=1280&cameraHeight=720&fr=30&bwV=1500&bwA=56&video=1&audio=1&protocol=wss&port=443&whipwhep=true&verbose=1' stream1 1 60 /home/ubuntu/video_examples/240p.y4m /home/ubuntu/video_examples/test_high.wav
     ```
     
+
+## Red5 AI Skills
+
+Use the **Red5 AI skills** to help your AI coding assistant build real-time video applications with Red5 Pro and Red5 Cloud, with guidance grounded in Red5 documentation. [Download the skill from GitHub](https://github.com/red5pro/red5pro-skills) or install it by running `npx red5pro-skills` in your terminal.
